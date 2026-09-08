@@ -34,6 +34,17 @@ class ContBancar{
         this.pin = pin;
     }
 
+    public acceptaTransferBancar(String ibanExpeditor, double suma) throws SumaNegativaException, CardBlocatException{
+        if(suma <= 0.0){
+            throw new SumaNegativaException();
+        }
+        if(!this.stare){
+            throw new CardBlocatException();
+        }
+        this.sold += suma;
+        System.out.println("Incasat suma de " + this.suma + " de la iban: " + ibanExpeditor);
+    }
+
     public String getIban(){
         return this.iban;
     }
@@ -134,5 +145,12 @@ abstract class Client{
             throw new SumaNegativaException();
         }
         this.banca.proceseazaTransfer(ibanEmitor, ibanAcceptor, suma);
+    }
+
+    public double acceptaTransferBancar(String ibanEmitor, String ibanAcceptor, double suma) throws SumaNegativaException{
+        if(suma < 0.0){
+            throw new SumaNegativaException();
+        }
+        thi
     }
 }
