@@ -146,11 +146,4 @@ abstract class Client{
         }
         this.banca.proceseazaTransfer(ibanEmitor, ibanAcceptor, suma);
     }
-
-    public double acceptaTransferBancar(String ibanEmitor, String ibanAcceptor, double suma) throws SumaNegativaException{
-        if(suma < 0.0){
-            throw new SumaNegativaException();
-        }
-        thi
-    }
 }
