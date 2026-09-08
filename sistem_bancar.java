@@ -14,6 +14,9 @@ class IbanEmitorInvalid extends Exception{};
 class IbanAcceptorInvalid extends Exception{};
 class SoldInsuficient extends Exception{};
 class SumaNegativaException extends Exception{};
+class CnpInvalidException extends Exception{};
+class FormatCuiInvalidException extends Exception{};
+class FormatNrInregistrareInvalidException extends Exception{};
 
 
 class ContBancar{
@@ -34,7 +37,7 @@ class ContBancar{
         this.pin = pin;
     }
 
-    public acceptaTransferBancar(String ibanExpeditor, double suma) throws SumaNegativaException, CardBlocatException{
+    public  double acceptaTransferBancar(String ibanExpeditor, double suma) throws SumaNegativaException, CardBlocatException{
         if(suma <= 0.0){
             throw new SumaNegativaException();
         }
@@ -42,7 +45,9 @@ class ContBancar{
             throw new CardBlocatException();
         }
         this.sold += suma;
-        System.out.println("Incasat suma de " + this.suma + " de la iban: " + ibanExpeditor);
+        System.out.println("Incasat suma de " + suma + " de la iban: " + ibanExpeditor);
+
+        return this.sold;
     }
 
     public String getIban(){
@@ -145,5 +150,51 @@ abstract class Client{
             throw new SumaNegativaException();
         }
         this.banca.proceseazaTransfer(ibanEmitor, ibanAcceptor, suma);
+    }
+}
+
+
+class PersoanaFizica extends Client{
+    private String cnp;
+
+    public PersoanaFizica(String nume, String adresa, String nrTelefon, Banca banca, String cnp) throws CnpInvalidException, FormatNrTelefonInvalid{
+        super(nume, adresa, nrTelefon, banca);
+
+        if(cnp == null || !cnp.matches("^[0-9]{13}$")){
+            throw new CnpInvalidException();
+        }
+        this.cnp = cnp;
+    }
+
+    public String getCnp(){
+        return this.cnp;
+    }
+}
+
+
+class PersoanaJuridica extends Client{
+    private String cui;
+    private String nrInregistrare;
+
+    public PersoanaJuridica(String nume, String adresa, String nrTelefon, Banca banca, String cui, String nrInregistrare) throws FormatCuiInvalidException, FormatNrInregistrareInvalidException, FormatNrTelefonInvalid{
+        super(nume, adresa, nrTelefon, banca);
+
+        if(cui == null || !cui.matches("^(RO)?[0-9]{2,10}$")){
+            throw new FormatCuiInvalidException();
+        }
+        this.cui = cui;
+
+        if(nrInregistrare == null || !nrInregistrare.matches("^[JFC][0-9]{2}/[0-9]{1,6}/[0-9]{4}$")){
+            throw new FormatNrInregistrareInvalidException();
+        }
+        this.nrInregistrare = nrInregistrare;
+    }
+
+    public String getCui(){
+        return this.cui;
+    }
+
+    public String getNrInregistrare(){
+        return this.nrInregistrare;
     }
 }
