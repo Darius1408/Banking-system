@@ -17,6 +17,7 @@ class SumaNegativaException extends Exception{};
 class CnpInvalidException extends Exception{};
 class FormatCuiInvalidException extends Exception{};
 class FormatNrInregistrareInvalidException extends Exception{};
+class FormatEmailInvalidException extends Exception{};
 
 
 class ContBancar{
@@ -68,6 +69,17 @@ class ContBancar{
 
     public int getPin(){
         return this.pin;
+    }
+
+    public boolean equals(Object obj){
+        if(this == obj){
+            return true;
+        }
+        else if(!(obj instanceof Client)){
+            return false;
+        }
+        ContBancar other = (ContBancar) obj;
+        return this.iban == other.iban;
     }
 
     public String toString(){
@@ -151,6 +163,40 @@ abstract class Client{
         }
         this.banca.proceseazaTransfer(ibanEmitor, ibanAcceptor, suma);
     }
+
+    public String getNume(){
+        return this.nume;
+    }
+
+    public String getAdresa(){
+        return this.adresa;
+    }
+
+    public String getNrTelefon(){
+        return this.nrTelefon;
+    }
+
+    public String getConturiBancare(){
+        String res = "Conturi:\n";
+        Iterator<ContBancar> it = this.conturi.values().iterator();
+        while(it.hasNext()){
+            res += it.next().toString();
+            if(it.hasNext()){
+                res += ";\n";
+            }
+        }
+        return res;
+    }
+
+    public String toString(){
+        String res = "Informatii client:\n";
+        res += "-nume: " + this.getNume() + "\n";
+        res += "-adresa: " + this.getAdresa() + "\n";
+        res += "-numar telefon: " + this.getNrTelefon() + "\n";
+        res += "-nume banca: " + this.banca.getNumeBanca() + "\n";
+        res += "-" + this.getConturiBancare() + "\n";
+        return res;
+    }
 }
 
 
@@ -168,6 +214,17 @@ class PersoanaFizica extends Client{
 
     public String getCnp(){
         return this.cnp;
+    }
+
+    public boolean equals(Object obj){
+        if(this == obj){
+            return true;
+        }
+        else if(!(obj instanceof Client)){
+            return false;
+        }
+        PersoanaFizica other = (PersoanaFizica) obj;
+        return this.getCnp().equals(other.getCnp());
     }
 }
 
@@ -196,5 +253,65 @@ class PersoanaJuridica extends Client{
 
     public String getNrInregistrare(){
         return this.nrInregistrare;
+    }
+
+    public boolean equals(Object obj){
+        if(this == obj){
+            return true;
+        }
+        else if(!(obj instanceof Client)){
+            return false;
+        }
+        PersoanaJuridica other = (PersoanaJuridica) obj;
+        return this.getCui().equals(other.getCui());
+    }
+}
+
+
+class Banca{
+    private String nume;
+    private String adresa;
+    private String nrTelefon;
+    private String email;
+    private String cui;
+    private String nrInregistrare;
+    private HashMap <String, Client> clienti;
+
+    public Banca(String nume, String adresa, String nrTelefon, String email, String cui, String nrInregistrare) throws FormatNrTelefonInvalid, FormatEmailInvalidException, FormatCuiInvalidException, FormatNrInregistrareInvalidException{
+        this.nume = nume;
+        this.adresa = adresa;
+        if(!nrTelefon.matches("^0[0-9]{9}") || nrTelefon == null){
+            throw new FormatNrTelefonInvalid();
+        }
+        this.nrTelefon = nrTelefon;
+        if(email == null || !email.matches("^[0-9a-zA-Z]{1,50}@[0-9a-zA-Z]{1-50}(.com)$")){
+            throw new FormatEmailInvalidException();
+        }
+        this.email = email;
+        if(cui == null || !cui.matches("^(RO)?[0-9]{2,10}$")){
+            throw new FormatCuiInvalidException();
+        }
+        this.cui = cui;
+        if(nrInregistrare == null || nrInregistrare.matches("^[JFC][0-9]{2}/[0-9]{1,6}/[0-9]{4}$")){
+            throw new FormatNrInregistrareInvalidException();
+        }
+        this.nrInregistrare = nrInregistrare;
+
+        this.clienti = new HashMap<>();
+    }
+
+    public boolean equals(Object obj){
+        if(this == obj){
+            return true;
+        }
+        else if(!(obj instanceof Client)){
+            return false;
+        }
+        Banca other = (Banca) obj;
+        return this.nume.equals(other.nume) && this.cui.equals(other.cui);
+    }
+
+    public double proceseazaTransfer(String ibanEmitor, String ibanAcceptor, double suma){
+
     }
 }
