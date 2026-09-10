@@ -18,6 +18,8 @@ class CnpInvalidException extends Exception{};
 class FormatCuiInvalidException extends Exception{};
 class FormatNrInregistrareInvalidException extends Exception{};
 class FormatEmailInvalidException extends Exception{};
+class BancaInexistentaException extends Exception{};
+class FormatCodBancaInvalidException extends Exception{};
 
 
 class ContBancar{
@@ -38,7 +40,7 @@ class ContBancar{
         this.pin = pin;
     }
 
-    public  double acceptaTransferBancar(String ibanExpeditor, double suma) throws SumaNegativaException, CardBlocatException{
+    public  void acceptaTransferBancar(String ibanExpeditor, double suma) throws SumaNegativaException, CardBlocatException{
         if(suma <= 0.0){
             throw new SumaNegativaException();
         }
@@ -48,7 +50,16 @@ class ContBancar{
         this.sold += suma;
         System.out.println("Incasat suma de " + suma + " de la iban: " + ibanExpeditor);
 
-        return this.sold;
+    }
+
+    public void retrage(double suma) throws SoldInsuficient, SumaNegativaException{
+        if(this.sold < suma){
+            throw new SoldInsuficient();
+        }
+        else if(suma <= 0.0){
+            throw new SumaNegativaException();
+        }
+        this.sold -= suma;
     }
 
     public String getIban(){
@@ -273,11 +284,12 @@ class Banca{
     private String adresa;
     private String nrTelefon;
     private String email;
+    private String codBanca;
     private String cui;
     private String nrInregistrare;
     private HashMap <String, Client> clienti;
 
-    public Banca(String nume, String adresa, String nrTelefon, String email, String cui, String nrInregistrare) throws FormatNrTelefonInvalid, FormatEmailInvalidException, FormatCuiInvalidException, FormatNrInregistrareInvalidException{
+    public Banca(String nume, String adresa, String nrTelefon, String email, String cui, String nrInregistrare, String codBanca) throws FormatNrTelefonInvalid, FormatEmailInvalidException, FormatCuiInvalidException, FormatNrInregistrareInvalidException, FormatCodBancaInvalidException{
         this.nume = nume;
         this.adresa = adresa;
         if(!nrTelefon.matches("^0[0-9]{9}") || nrTelefon == null){
@@ -297,6 +309,9 @@ class Banca{
         }
         this.nrInregistrare = nrInregistrare;
 
+        if(!codBanca.matches("^[A-Z]{4}$")){
+            throw new FormatCodBancaInvalidException();
+        }
         this.clienti = new HashMap<>();
     }
 
@@ -311,7 +326,118 @@ class Banca{
         return this.nume.equals(other.nume) && this.cui.equals(other.cui);
     }
 
-    public double proceseazaTransfer(String ibanEmitor, String ibanAcceptor, double suma){
+    private ContBancar gasesteCont(String iban) throws ContInexistent{
+        for(Client ct: this.clienti.values()){
+            ContBancar cont = ct.conturi.get(iban);
+            if(cont == null){
+                throw new ContInexistent();
+            }
+            return cont;
+        }
+    }
 
+    public void proceseazaTransfer(String ibanEmitor, String ibanAcceptor, double suma) throws FormatIbanInvalid, SumaNegativaException, ContInexistent, FonduriInsuficienteException{
+        if(ibanEmitor == null || ibanEmitor.length() != 24 || !ibanEmitor.startsWith("RO") || !ibanEmitor.substring(4, 8).matches("^[A-Z]{4}$")){
+            throw new FormatIbanInvalid();
+        }
+        else if(ibanAcceptor == null || ibanAcceptor.length() != 24 || !ibanAcceptor.startsWith("RO") || !ibanAcceptor.substring(4, 8).matches("^[A-Z]{4}$")){
+            throw new FormatIbanInvalid();
+        }
+        else if(suma <= 0.0){
+            throw new SumaNegativaException();
+        }
+
+        ContBancar contEmitor = gasesteCont(ibanEmitor);
+        if(contEmitor == null){
+            throw new ContInexistent();
+        }
+        if(contEmitor.getSold() < suma){
+            throw new FonduriInsuficienteException();
+        }
+        if(ibanEmitor.substring(4, 8).equals(ibanAcceptor.substring(4, 8)) == true){
+            ContBancar contAcceptor = gasesteCont(ibanAcceptor);
+            if(contAcceptor == null){
+                throw new ContInexistent();
+            }
+            contEmitor.retrage(suma);
+            contAcceptor.acceptaTransferBancar(ibanEmitor, suma);
+        }
+
+        else{
+            String codBancaAcceptoare = ibanAcceptor.substring(4, 8);
+            Banca bancaAcceptoare = coduriBanci.get(codBancaAcceptoare);
+
+            contEmitor.retrage(suma);
+            proceseazaTransferBancaAcceptoare(bancaAcceptoare, String ibanAcceptor, String ibanEmitor, suma);
+        }
+    }
+
+    public void proceseazaTransferBancaAcceptoare(Banca bancaAcceptoare, String ibanAcceptor, String ibanExpeditor, double suma) throws BancaInexistentaException, ContInexistent, SumaNegativaException{
+        if(bancaAcceptoare == null){
+            throw new BancaInexistentaException();
+        }
+        if(ibanAcceptor == null){
+            throw new ContInexistent();
+        }
+        if(suma <= 0.0){
+            throw new SumaNegativaException();
+        }
+
+        ContBancar contAcceptor = bancaAcceptoare.gasesteCont(ibanAcceptor);
+        acceptaTransferBancar(ibanExpeditor, suma);
+    }
+
+    public String getNume(){
+        return this.nume;
+    }
+
+    public String getAdresa(){
+        return this.adresa;
+    }
+
+    public String getNrTelefon(){
+        return this.nrTelefon;
+    }
+
+    public String getEmail(){
+        return this.email;
+    }
+
+    public String getCodBanca(){
+        return this.codBanca;
+    }
+
+    public String getCui(){
+        return this.cui;
+    }
+
+    public String getNrInregistrare(){
+        return this.nrInregistrare;
+    }
+
+    public boolean equals(Object obj){
+        if(this == obj){
+            return true;
+        }
+        else if(!(obj instanceof Banca)){
+            return false;
+        }
+        Banca other = (Banca) obj;
+        return this.nrInregistrare.equals(other.nrInregistrare) && this.nume.equals(other.nume);
+    }
+}
+
+
+class Sistem{
+    private static HashMap <String, Banca> coduriBanci;
+    private ArrayList <String> banciInrolate;
+
+    public Sistem(){
+        this.coduriBanci = new HashMap<>();
+        this.banciInrolate = new ArrayList<>();
+    }
+
+    public void adaugaBanca(Banca bank){
+        if(bank)
     }
 }
