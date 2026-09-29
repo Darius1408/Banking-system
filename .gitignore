@@ -1,1 +1,24 @@
+# Bytecode & compilare Java
 *.class
+*.jar
+*.war
+
+# Foldere generate la build (Maven / Gradle)
+target/
+build/
+bin/
+
+# Setari IDE (IntelliJ IDEA, VS Code, Eclipse)
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Fisiere de sistem specifice macOS
+.DS_Store
+
+# Fisiere temporare si backup
+*.bak
+*.swp*.class
